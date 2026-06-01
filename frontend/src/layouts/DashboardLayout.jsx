@@ -70,15 +70,14 @@ const DashboardLayout = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group {
                   isActive
                     ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                <Icon className={`w-5 h-5 mr-3 transition-transform duration-200 group-hover:scale-110 ${
-                  isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'
-                }`} />
+                <Icon className={`w-5 h-5 mr-3 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'
+                  }`} />
                 {link.name}
               </Link>
             );
@@ -120,11 +119,10 @@ const DashboardLayout = () => {
                     key={link.path}
                     to={link.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      isActive
+                    className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
                         ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
                         : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-5 h-5 mr-3" />
                     {link.name}
@@ -155,7 +153,7 @@ const DashboardLayout = () => {
           >
             <Menu className="w-6 h-6" />
           </button>
-          
+
           <div className="flex items-center space-x-4 ml-auto">
             <div className="hidden sm:block text-right">
               <div className="text-sm font-semibold text-slate-800">{user?.name}</div>
