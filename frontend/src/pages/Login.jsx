@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Lock, Mail, Loader2, GraduationCap } from 'lucide-react';
+import doonLogo from '../assets/doon_logo.jpg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -61,11 +62,11 @@ const Login = () => {
       <div className="w-full max-w-md p-6 z-10">
         <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-between text-white mx-auto shadow-lg shadow-sky-500/20 mb-4">
-              <GraduationCap className="w-7 h-7 mx-auto" />
+            <div className="mb-4">
+              <img src={doonLogo} alt="Doon University Logo" className="h-20 w-20 mx-auto object-contain rounded-full bg-white p-1 shadow-lg border border-slate-800" />
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Welcome Back</h2>
-            <p className="text-slate-400 text-sm mt-1">Sign in to your college placement account</p>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Doon University</h2>
+            <p className="text-slate-400 text-sm mt-1">Placement Portal</p>
           </div>
 
           {error && (

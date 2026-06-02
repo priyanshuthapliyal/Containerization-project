@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import doonLogo from '../assets/doon_logo.jpg';
 import {
   LayoutDashboard,
   Briefcase,
@@ -57,10 +58,16 @@ const DashboardLayout = () => {
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-100 flex-shrink-0 border-r border-slate-800">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
-          <span className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent tracking-wide">
-            PlacementPortal
-          </span>
+        <div className="h-16 flex items-center px-4 border-b border-slate-800 bg-slate-950 gap-3">
+          <img src={doonLogo} alt="Doon University Logo" className="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow-sm" />
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-white tracking-wide uppercase leading-none">
+              Doon University
+            </span>
+            <span className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider mt-0.5">
+              Placement Portal
+            </span>
+          </div>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {navLinks.map((link) => {
@@ -102,10 +109,18 @@ const DashboardLayout = () => {
             onClick={() => setSidebarOpen(false)}
           />
           <aside className="relative flex flex-col w-64 bg-slate-900 text-slate-100 h-full border-r border-slate-800 animate-slide-in">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
-              <span className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                PlacementPortal
-              </span>
+            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950">
+              <div className="flex items-center gap-3">
+                <img src={doonLogo} alt="Doon University Logo" className="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow-sm" />
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold text-white tracking-wide uppercase leading-none">
+                    Doon University
+                  </span>
+                  <span className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider mt-0.5">
+                    Placement Portal
+                  </span>
+                </div>
+              </div>
               <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-6 h-6" />
               </button>
