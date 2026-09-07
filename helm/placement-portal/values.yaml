@@ -1,0 +1,101 @@
+# Default values for placement-portal.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# ==========================================
+# Application General Configuration
+# ==========================================
+config:
+  nodeEnv: "production"
+  port: 5000
+  mongoDatabase: "placement_portal"
+  mongoPort: 27017
+  # Hostname/URL where client accesses the application (for CORS)
+  clientUrl: "http://localhost"
+
+# ==========================================
+# Secret Configurations (Override in production!)
+# ==========================================
+secrets:
+  mongoRootUsername: "db_admin"
+  mongoRootPassword: "change_this_to_a_secure_password"
+  jwtAccessSecret: "change_this_to_a_secure_jwt_access_secret_key"
+  jwtRefreshSecret: "change_this_to_a_secure_jwt_refresh_secret_key"
+
+# ==========================================
+# Database Service (MongoDB)
+# ==========================================
+mongodb:
+  image:
+    repository: "mongo"
+    tag: "6.0-jammy"
+    pullPolicy: "IfNotPresent"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  persistence:
+    size: "5Gi"
+    accessMode: "ReadWriteOnce"
+    storageClass: "" # Leave empty to use cluster default storage class
+
+# ==========================================
+# Backend API Service
+# ==========================================
+backend:
+  replicaCount: 1
+  image:
+    repository: "priyanshuthapliyal/placement-backend"
+    tag: "v2"
+    pullPolicy: "IfNotPresent"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  persistence:
+    size: "2Gi"
+    accessMode: "ReadWriteOnce"
+    storageClass: "" # Leave empty to use cluster default storage class
+
+# ==========================================
+# Frontend Web Service
+# ==========================================
+frontend:
+  replicaCount: 2
+  image:
+    repository: "priyanshuthapliyal/placement-frontend"
+    tag: "v2"
+    pullPolicy: "IfNotPresent"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+# ==========================================
+# Ingress Controller Routing
+# ==========================================
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: "placement.example.com"
+      paths:
+        - path: "/"
+          pathType: "Prefix"
+  tls: []
+  #  - secretName: placement-tls-cert
+  #    hosts:
+  #      - placement.example.com

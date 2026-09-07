@@ -55,7 +55,7 @@ const seedDatabase = async () => {
     // 3. Seed Placement Officer (PO) User
     console.log('Seeding Placement Officer account...');
     await User.create({
-      name: 'Officer Jane Smith',
+      name: 'Kernelops Placement Officer',
       email: 'po@college.edu',
       password: 'po123456',
       role: 'po',
@@ -66,7 +66,7 @@ const seedDatabase = async () => {
     // 4. Seed Student User and Profile
     console.log('Seeding student account...');
     const studentUser = await User.create({
-      name: 'John Doe',
+      name: 'Kernelops Student',
       email: 'student@college.edu',
       password: 'student123', // Student has default credentials
       role: 'student',

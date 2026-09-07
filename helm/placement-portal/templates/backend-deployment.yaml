@@ -1,0 +1,147 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "placement-portal.fullname" . }}-backend-uploads-pvc
+  labels:
+    {{- include "placement-portal.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  accessModes:
+    - {{ .Values.backend.persistence.accessMode | quote }}
+  {{- if .Values.backend.persistence.storageClass }}
+  storageClassName: {{ .Values.backend.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.size | quote }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "placement-portal.fullname" . }}-backend
+  labels:
+    {{- include "placement-portal.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+  selector:
+    app.kubernetes.io/name: {{ include "placement-portal.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: backend
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "placement-portal.fullname" . }}-backend
+  labels:
+    {{- include "placement-portal.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "placement-portal.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "placement-portal.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5000
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-config
+                  key: PORT
+            - name: MONGO_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-config
+                  key: MONGO_DATABASE
+            - name: CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-config
+                  key: CLIENT_URL
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-secrets
+                  key: mongo-root-username
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-secrets
+                  key: mongo-root-password
+            - name: JWT_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-secrets
+                  key: jwt-access-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "placement-portal.fullname" . }}-secrets
+                  key: jwt-refresh-secret
+            # Dynamic connection string using release fullname helper for service discovery
+            - name: MONGODB_URI
+              value: mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@{{ include "placement-portal.fullname" . }}-db:27017/$(MONGO_DATABASE)?authSource=admin
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: backend-uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: backend-uploads
+          persistentVolumeClaim:
+            claimName: {{ include "placement-portal.fullname" . }}-backend-uploads-pvc

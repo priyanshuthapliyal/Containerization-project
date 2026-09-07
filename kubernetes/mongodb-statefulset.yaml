@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: placement-db-headless
+  namespace: placement
+  labels:
+    app.kubernetes.io/name: college-placement-app
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: college-placement-app
+spec:
+  clusterIP: None
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+  selector:
+    app.kubernetes.io/name: college-placement-app
+    app.kubernetes.io/component: database
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: placement-db
+  namespace: placement
+  labels:
+    app.kubernetes.io/name: college-placement-app
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: college-placement-app
+spec:
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+  selector:
+    app.kubernetes.io/name: college-placement-app
+    app.kubernetes.io/component: database
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: placement-db
+  namespace: placement
+  labels:
+    app.kubernetes.io/name: college-placement-app
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: college-placement-app
+spec:
+  serviceName: placement-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: college-placement-app
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: college-placement-app
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        fsGroup: 999 # MongoDB default group
+      containers:
+        - name: mongodb
+          image: mongo:6.0-jammy
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: placement-secrets
+                  key: mongo-root-username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: placement-secrets
+                  key: mongo-root-password
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi

@@ -1,0 +1,17 @@
+# Patterns to ignore when building packages
+.git
+*~
+*.swp
+*.bak
+*.tmp
+*.orig
+.DS_Store
+# Common directories to ignore
+.idea/
+.vscode/
+.git/
+.gitignore
+.github/
+.gitlab-ci.yml
+# Helm chart development artifacts
+*.tgz

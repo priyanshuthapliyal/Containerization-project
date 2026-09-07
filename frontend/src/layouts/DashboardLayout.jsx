@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import doonLogo from '../assets/doon_logo.jpg';
+import doonLogo from '../assets/Kernelops.png';
 import {
   LayoutDashboard,
   Briefcase,
@@ -59,10 +59,10 @@ const DashboardLayout = () => {
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-100 flex-shrink-0 border-r border-slate-800">
         <div className="h-16 flex items-center px-4 border-b border-slate-800 bg-slate-950 gap-3">
-          <img src={doonLogo} alt="Doon University Logo" className="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow-sm" />
+          <img src={doonLogo} alt="Kernelops University Logo" className="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow-sm" />
           <div className="flex flex-col">
             <span className="text-sm font-bold text-white tracking-wide uppercase leading-none">
-              Doon University
+              Kernelops University
             </span>
             <span className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider mt-0.5">
               Placement Portal
@@ -111,10 +111,10 @@ const DashboardLayout = () => {
           <aside className="relative flex flex-col w-64 bg-slate-900 text-slate-100 h-full border-r border-slate-800 animate-slide-in">
             <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950">
               <div className="flex items-center gap-3">
-                <img src={doonLogo} alt="Doon University Logo" className="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow-sm" />
+                <img src={doonLogo} alt="Kernelops University Logo" className="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow-sm" />
                 <div className="flex flex-col text-left">
                   <span className="text-sm font-bold text-white tracking-wide uppercase leading-none">
-                    Doon University
+                    Kernelops University
                   </span>
                   <span className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider mt-0.5">
                     Placement Portal

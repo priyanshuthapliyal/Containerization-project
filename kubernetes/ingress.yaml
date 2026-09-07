@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: placement-ingress
+  namespace: placement
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Increase maximum upload size to 10MB to allow resume PDFs
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # Enable SSL redirection in production (requires TLS configured)
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  labels:
+    app.kubernetes.io/name: college-placement-app
+    app.kubernetes.io/part-of: college-placement-app
+spec:
+  ingressClassName: nginx
+  rules:
+    # Change host to your production domain (e.g. placement.yourdomain.com)
+    - host: placement.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: placement-frontend
+                port:
+                  number: 80
+  # TLS certificate block (Uncomment and configure in production)
+  # tls:
+  #   - hosts:
+  #       - placement.example.com
+  #     secretName: placement-tls-cert

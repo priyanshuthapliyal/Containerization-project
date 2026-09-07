@@ -1,0 +1,14 @@
+apiVersion: v2
+name: placement-portal
+description: A production-grade Helm chart for the College Placement Portal application
+
+# A chart can be either an 'application' or a 'library' chart.
+type: application
+
+# This is the chart version. This version number should be incremented when you make changes
+# to the chart itself, its templates, or its values.
+version: 1.0.0
+
+# This is the version number of the application being deployed. This version number should be
+# incremented when the backend or frontend application images are updated.
+appVersion: "2.0.0"

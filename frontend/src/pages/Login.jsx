@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Lock, Mail, Loader2, GraduationCap } from 'lucide-react';
-import doonLogo from '../assets/doon_logo.jpg';
+import doonLogo from '../assets/Kernelops.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -63,9 +63,9 @@ const Login = () => {
         <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <div className="mb-4">
-              <img src={doonLogo} alt="Doon University Logo" className="h-20 w-20 mx-auto object-contain rounded-full bg-white p-1 shadow-lg border border-slate-800" />
+              <img src={doonLogo} alt="Kernelops University Logo" className="h-20 w-20 mx-auto object-contain rounded-full bg-white p-1 shadow-lg border border-slate-800" />
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Doon University</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Kernelops University</h2>
             <p className="text-slate-400 text-sm mt-1">Placement Portal</p>
           </div>
 
