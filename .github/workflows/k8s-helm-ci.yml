@@ -1,4 +1,4 @@
-name: Kubernetes & Helm CI / Validation
+name: Helm CI / Validation & Security Gates
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
       - test
     paths:
       - 'helm/**'
-      - 'kubernetes/**'
       - '.github/workflows/k8s-helm-ci.yml'
   pull_request:
     branches:
@@ -15,7 +14,6 @@ on:
       - test
     paths:
       - 'helm/**'
-      - 'kubernetes/**'
       - '.github/workflows/k8s-helm-ci.yml'
   workflow_dispatch:
 
@@ -54,7 +52,7 @@ jobs:
         run: |
           echo "==> Rendering Helm templates with default values..."
           helm template placement-portal helm/placement-portal \
-            --namespace placement-test \
+            --namespace placement \
             --debug > rendered-helm-manifests.yaml
 
       - name: Upload Rendered Manifests Artifact
@@ -87,28 +85,9 @@ jobs:
           sudo mv kubeconform /usr/local/bin/
           kubeconform -v
 
-      - name: Validate Raw Kubernetes Manifests
-        run: |
-          echo "==> Validating static manifests in kubernetes/..."
-          kubeconform \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -strict \
-            -summary \
-            kubernetes/*.yaml
-
-      - name: Validate Kustomize Output
-        run: |
-          echo "==> Validating kustomize build output..."
-          kubectl kustomize kubernetes/ | kubeconform \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -strict \
-            -summary
-
       - name: Validate Rendered Helm Chart
         run: |
-          echo "==> Validating rendered Helm manifests with Kubeconform..."
+          echo "==> Validating rendered Helm manifests with Kubeconform against Kubernetes OpenAPI schemas..."
           kubeconform \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
@@ -126,11 +105,11 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Run Trivy IaC Scanner on Helm & K8s
+      - name: Run Trivy IaC Scanner on Helm Chart
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
-          scan-ref: '.'
+          scan-ref: 'helm/placement-portal'
           hide-progress: false
           format: 'table'
           exit-code: '0' # Set to '1' when you want to enforce blocking on misconfigurations
@@ -163,16 +142,14 @@ jobs:
           kubectl cluster-info
           kubectl get nodes -o wide
 
-      - name: Server-Side Dry-Run (Raw K8s Manifests)
+      - name: Create Target Namespace
         run: |
-          echo "==> Testing server-side dry run for raw Kubernetes manifests..."
-          kubectl create namespace college-placement-system --dry-run=client -o yaml | kubectl apply -f -
-          kubectl apply -k kubernetes/ --dry-run=server
+          echo "==> Creating test namespace on KinD cluster..."
+          kubectl create namespace placement
 
       - name: Deploy Helm Chart into KinD (Server-Side Dry-Run)
         run: |
-          echo "==> Testing Helm installation with server-side validation..."
+          echo "==> Testing Helm installation with server-side API validation..."
           helm install placement-portal ./helm/placement-portal \
-            --namespace college-placement-system \
-            --create-namespace \
+            --namespace placement \
             --dry-run=server
