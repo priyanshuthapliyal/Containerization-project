@@ -1,0 +1,178 @@
+name: Kubernetes & Helm CI / Validation
+
+on:
+  push:
+    branches:
+      - main
+      - test
+    paths:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - '.github/workflows/k8s-helm-ci.yml'
+  pull_request:
+    branches:
+      - main
+      - test
+    paths:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - '.github/workflows/k8s-helm-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # 1. HELM LINT & TEMPLATE RENDERING
+  # ============================================================================
+  helm-lint:
+    name: Helm Lint & Template Rendering
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.15.0'
+
+      - name: Helm Dependency Build
+        run: |
+          if [ -f "helm/placement-portal/Chart.lock" ] || [ -d "helm/placement-portal/charts" ]; then
+            helm dependency build helm/placement-portal
+          fi
+
+      - name: Helm Lint
+        run: |
+          echo "==> Running helm lint on placement-portal chart..."
+          helm lint helm/placement-portal --strict
+
+      - name: Helm Template (Dry-Run Render)
+        run: |
+          echo "==> Rendering Helm templates with default values..."
+          helm template placement-portal helm/placement-portal \
+            --namespace placement-test \
+            --debug > rendered-helm-manifests.yaml
+
+      - name: Upload Rendered Manifests Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-helm-manifests
+          path: rendered-helm-manifests.yaml
+          retention-days: 5
+
+  # ============================================================================
+  # 2. KUBECONFORM SCHEMA VALIDATION
+  # ============================================================================
+  kubeconform-validation:
+    name: Kubeconform Schema Validation
+    runs-on: ubuntu-latest
+    needs: helm-lint
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Download Rendered Helm Manifests
+        uses: actions/download-artifact@v4
+        with:
+          name: rendered-helm-manifests
+
+      - name: Install Kubeconform
+        run: |
+          KUBECONFORM_VERSION="v0.6.7"
+          curl -sL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar -xz
+          sudo mv kubeconform /usr/local/bin/
+          kubeconform -v
+
+      - name: Validate Raw Kubernetes Manifests
+        run: |
+          echo "==> Validating static manifests in kubernetes/..."
+          kubeconform \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -strict \
+            -summary \
+            kubernetes/*.yaml
+
+      - name: Validate Kustomize Output
+        run: |
+          echo "==> Validating kustomize build output..."
+          kubectl kustomize kubernetes/ | kubeconform \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -strict \
+            -summary
+
+      - name: Validate Rendered Helm Chart
+        run: |
+          echo "==> Validating rendered Helm manifests with Kubeconform..."
+          kubeconform \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -strict \
+            -summary \
+            rendered-helm-manifests.yaml
+
+  # ============================================================================
+  # 3. INFRASTRUCTURE AS CODE (IaC) SECURITY SCAN
+  # ============================================================================
+  iac-security-scan:
+    name: IaC Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy IaC Scanner on Helm & K8s
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          hide-progress: false
+          format: 'table'
+          exit-code: '0' # Set to '1' when you want to enforce blocking on misconfigurations
+          severity: 'CRITICAL,HIGH'
+
+  # ============================================================================
+  # 4. EPHEMERAL KIND CLUSTER INTEGRATION TEST
+  # ============================================================================
+  kind-integration-test:
+    name: Ephemeral KinD Integration Test
+    runs-on: ubuntu-latest
+    needs: [helm-lint, kubeconform-validation]
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.15.0'
+
+      - name: Create Ephemeral KinD Cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: ci-cluster
+          node_image: kindest/node:v1.30.0
+
+      - name: Verify KinD Cluster Nodes & API Server
+        run: |
+          kubectl cluster-info
+          kubectl get nodes -o wide
+
+      - name: Server-Side Dry-Run (Raw K8s Manifests)
+        run: |
+          echo "==> Testing server-side dry run for raw Kubernetes manifests..."
+          kubectl create namespace college-placement-system --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -k kubernetes/ --dry-run=server
+
+      - name: Deploy Helm Chart into KinD (Server-Side Dry-Run)
+        run: |
+          echo "==> Testing Helm installation with server-side validation..."
+          helm install placement-portal ./helm/placement-portal \
+            --namespace college-placement-system \
+            --create-namespace \
+            --dry-run=server
